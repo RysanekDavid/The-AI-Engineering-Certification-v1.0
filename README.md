@@ -10,32 +10,16 @@
 
 Welcome to [The AI Engineering Certification](https://maven.com/aimakerspace/ai-engineer-certification) v1.0.
 
-> **Everything you need to succeed is in this repo** - start with [`00_AIEC_Quicklinks`](00_AIEC_Quicklinks/README.md).
-
-### Contents
-
-- [🛣️ Getting Started](#️-getting-started)
-- [📚 Course Materials](#-course-materials)
-- [🌐 Discord](#-discord)
-  - [Community Channels](#community-channels)
-  - [AIEC1 Channels](#aiec1-channels)
-  - [Discord Community Rules](#discord-community-rules)
-- [🧑‍🤝‍🧑 Peer Supporters](#-peer-supporters)
-- [🙏 Contributions](#-contributions)
 
 ---
 
 ## 🛣️ Getting Started
 
-To prepare for Session 1, be sure that you have the following things completed:
+To best prepare for Session 1, do these things:
 
-1. 🧑‍💻 Complete [The AI Engineer Challenge](https://aimakerspace.io/aie-challenge)
-2. 🌡️ Fill out your [starting self-assessment](https://forms.gle/m3Ex6W66jbXUKVjk9) (we won't know where to send your merch without filling this out)!
-3. 🛹 Complete your [Onboarding Call](https://calendly.com/mark-aimakerspace/the-ai-engineer-certification-onboarding-cohort-1?month=2026-05) with our Student Success Manager, [Coach Mark](https://www.linkedin.com/in/mark-l-walker/)
-4. 📅 Follow the [v1.0 Calendar](https://bit.ly/AIEC_Cal) to ensure you have access to [our primary Zoom classroom](https://us02web.zoom.us/j/87543421451) and you when we hold office hours
-5. 🎖️ Decide now: is [The AI Engineer Certification](https://absorbing-toaster-713.notion.site/The-AI-Engineer-Certification-256cd547af3d808a9c95e8f6efb8fb5a?pvs=74) right for you?
-6. 🚀 Consider the importance of [Building AND Sharing](https://absorbing-toaster-713.notion.site/On-Building-AND-Sharing-7747cb74f6184a008c262449ead172bd?pvs=74), as well as how it aligns with your goals.
-7. 🤓 Prepare to hit the ground running in Session 1 by reading the information available in [`00_Docs`](00_Docs)
+1. 🌡️ Fill out your [starting self-assessment](https://forms.gle/m3Ex6W66jbXUKVjk9)
+2. 🛹 Complete your [onboarding call](https://calendly.com/mark-aimakerspace/the-ai-engineer-certification-onboarding-cohort-1)
+3. 🤓 Prepare to hit the ground running in Session 1 by reviewing the information currently available in [`00_Docs`](00_Docs)
 
 ---
 
