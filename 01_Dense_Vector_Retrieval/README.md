@@ -69,6 +69,8 @@ Why is cosine similarity useful for dense vector retrieval?
 
 ##### ✅ Answer:
 
+Cosine similarity measures the angle between two embedding vectors, not their length. That matters because dense embeddings encode meaning through direction in vector space — two texts can express the same idea but with different magnitudes, and cosine still recognizes them as close. In the primer cell I saw `king` vs `queen` score 0.591 while `king` vs `banana` only scored 0.310, which matches my intuition about semantic similarity. For retrieval, cosine gives a stable ranking metric that's not biased by chunk length or model-specific norms.
+
 ---
 
 ## 🏗️ Activity #2: Build the Vector RAG Pipeline
@@ -88,17 +90,35 @@ Why is metadata important for a RAG application?
 
 ##### ✅ Answer:
 
+Metadata gives every chunk a verifiable origin — file name, page number, character offset, document type — which unlocks three things that wouldn't work without it:
+
+1. **Citing sources.** Without metadata the model could pull text from anywhere and the user couldn't verify it. My notebook prints `[Source 1] cat_health_guidelines.pdf, page 8, ...` for every retrieved chunk, which is how user trust is built.
+2. **Filtering before searching.** If multiple documents are indexed, metadata lets retrieval be restricted (e.g. "only chunks from the 2021 feline guidelines"). Without it the vector store sees one undifferentiated soup.
+3. **Debugging retrieval.** When the top hit is wrong, page numbers and `start_index` show exactly which paragraph misfired so chunking or prompting can be fixed.
+
 #### ❓Question #3
 
 What tradeoff do we make when choosing chunk size and chunk overlap?
 
 ##### ✅ Answer:
 
+Smaller chunks give more focused embeddings but fragment paragraphs and lose the broader context a question might need. Larger chunks preserve full topical units but their embedding represents a mixed-topic signal that's less precise for narrow queries. Overlap reduces the risk of cutting a key sentence in half at a chunk boundary — but it also duplicates text, which inflates storage and embedding-API cost without adding new information.
+
+Activity #4 made this concrete for me: cutting baseline chunks of 1,000 chars down to 400 dropped my top similarity score from 0.584 to 0.570 and shifted the best hit to a less relevant section, because the cat health guideline already organizes content into self-contained paragraphs that match queries better when kept whole.
+
 #### ❓Question #4
 
 What does a similarity score help you understand, and what does it not prove by itself?
 
 ##### ✅ Answer:
+
+A similarity score tells me how close two vectors are in the embedding model's space — useful for *ranking* candidates against each other. What it does NOT tell me on its own:
+
+- Whether the chunk actually contains the answer to the question (vector closeness ≠ semantic correctness).
+- Whether the LLM will be able to extract the right answer from it.
+- Whether the score is "good" in any absolute sense — different embedding models produce different scales, so 0.58 from `text-embedding-3-small` isn't comparable to 0.58 from another model.
+
+In Activity #4 I saw a variant with a lower top score (0.570) still produce a perfectly reasonable answer — just narrower in scope. The score is a useful relative signal for tuning, not a quality verdict on the final answer.
 
 ---
 
@@ -115,6 +135,10 @@ For the vibe check queries, did the retrieved context seem relevant before gener
 
 ##### ✅ Answer:
 
+For the three on-topic questions (preventive care, symptoms, feeding a healthy adult cat), the retrieved chunks came from the right pages of the guideline and clearly addressed the question — similarity scores sat in the 0.55–0.60 range and the chunk previews lined up with what the answer eventually said. That's what relevant retrieval looks like before generation.
+
+For the "Can my cat help me file my taxes?" query, retrieval still returned the four closest available chunks, but their content had no real connection to the question — they were just the least-bad matches in a corpus that has no tax content at all. The system handled this correctly because the prompt instructs the model to say *"I don't have enough information in the provided cat health guideline PDF to answer that"* when context doesn't cover the question, which is exactly what happened. So: retrieval was relevant where the answer was in the corpus, and the prompt-level safety-net handled the case where it wasn't.
+
 ---
 
 ## 🏗️ Activity #4: Tune Retrieval
@@ -130,13 +154,15 @@ Document what changed and whether retrieval improved.
 
 ##### Settings Changed:
 
--
+- Compared the baseline (`chunk_size=1000`, `chunk_overlap=200`, `k=4`) against two variants on the same test question (*"What signs suggest that a cat should be seen by a veterinarian?"*):
+  - Variant A — smaller chunks: `chunk_size=400`, `chunk_overlap=80`, `k=4`
+  - Variant B — wider retrieval: `chunk_size=1000`, `chunk_overlap=200`, `k=8`
 
 ##### Results:
 
-1.
-2.
-3.
+1. **Baseline** — 135 chunks. Top similarity score **0.584**, mean top-4 **0.568**. Top hit on page 8 (pain/anxiety and quality-of-life section). Answer was a broad practical list of warning signs.
+2. **Variant A (smaller chunks)** — 345 chunks. Top score dropped to **0.570**, mean to 0.566. Top hit shifted to page 10 (senior-cat-specific content), and the generated answer narrowed almost entirely to senior cats.
+3. **Variant B (k=8)** — same 135 chunks, so top score stayed at **0.584**, but mean dropped to **0.556** as chunks 5–8 added noticeably less relevant material. Net effect: baseline beat both variants — the cat guideline is already structured into topical paragraphs, so smaller chunks fragment those units and a larger `k` just dilutes precision without adding new signal.
 
 ---
 
