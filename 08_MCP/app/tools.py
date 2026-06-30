@@ -36,6 +36,38 @@ async def list_products(category: str | None = None) -> list[dict]:
 
 
 @mcp.tool()
+async def search_products(query: str) -> list[dict]:
+    """Search the cat shop catalog by free-text query.
+
+    Matches the query (case-insensitive) against the product name and
+    description. Useful when the user describes what they want
+    ("something soft for napping", "feather toy") instead of browsing a
+    known category with list_products.
+
+    Returns up to 50 matches ordered by product name. Returns an empty
+    list for blank queries.
+    """
+    if not query or not query.strip():
+        return []
+
+    db = await oauth_provider._get_db()
+    pattern = f"%{query.strip().lower()}%"
+    cursor = await db.execute(
+        """SELECT id, name, description, price, category
+           FROM products
+           WHERE LOWER(name) LIKE ? OR LOWER(description) LIKE ?
+           ORDER BY name
+           LIMIT 50""",
+        (pattern, pattern),
+    )
+    rows = await cursor.fetchall()
+    return [
+        {"id": r[0], "name": r[1], "description": r[2], "price": r[3], "category": r[4]}
+        for r in rows
+    ]
+
+
+@mcp.tool()
 async def get_product(product_id: int) -> dict:
     """Get full details of a single product by its ID."""
     db = await oauth_provider._get_db()
