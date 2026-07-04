@@ -83,7 +83,7 @@ What is the difference between serverless and dedicated endpoints?
 
 #### ✅ Answer:
 
-_(insert your answer here)_
+A **serverless endpoint** is shared, multi-tenant infrastructure: the provider keeps the model loaded and you pay only per token, with zero setup and zero idle cost. The trade-offs are variable latency and throughput (you compete with other tenants), possible rate limits and cold starts, and no control over the hardware or model configuration. A **dedicated (on-demand) endpoint** provisions GPUs that serve only you: you get guaranteed capacity, predictable latency, higher and more stable throughput, and control over the deployment (GPU type, quantization/precision, replicas, autoscaling, scale-to-zero). The trade-off is cost model and responsibility — you pay per GPU-hour whether or not requests are flowing (e.g. ~$36/hr for a B200 shape), so you must manage scaling and remember to shut it down. Rule of thumb: serverless for prototyping, spiky or low traffic; dedicated for production workloads with steady traffic, strict latency SLAs, or data-isolation requirements.
 
 ### ❓ Question #2:
 
@@ -91,7 +91,7 @@ Why is it important to consider token throughput and latency when choosing an LL
 
 #### ✅ Answer:
 
-_(insert your answer here)_
+Because in a user-facing app they directly determine the perceived quality of the product. **Latency** (especially time-to-first-token) is what the user feels as "the app is thinking" — in a chat UI, a long silent pause before the first streamed token makes the app feel broken, regardless of how good the final answer is. **Throughput** (tokens/second) determines how fast the answer flows once it starts, and — on shared or dedicated infrastructure — how many concurrent users you can serve: on a dedicated endpoint, throughput per user drops as more clients hit the same GPUs, so it drives your replica/autoscaling plan and therefore your cost. There is also a compounding effect in agentic apps: one user request can mean several sequential LLM calls (tool-calling loop, helpfulness judge), so per-call latency multiplies. A model that is slightly "smarter" but 3× slower is often a worse choice for chat than a smaller, faster model — which is exactly why picking the model has to start from the use case (interactive chat vs. offline batch evaluation, where latency barely matters and cheap throughput wins).
 
 ## Activity 1: RAGAS Evaluation with Cost Analysis
 

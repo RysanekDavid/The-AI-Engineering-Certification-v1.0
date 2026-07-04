@@ -428,7 +428,7 @@ Why does LangSmith deploy your agent as an API backend only, and why do you stil
 
 #### Answer
 
-_(insert your answer here)_
+LangSmith Deployment is purpose-built infrastructure for running LangGraph graphs: it exposes a standard Agent Server API (threads, runs, assistants, streaming) and provides the persistence layer for memory/conversation history, horizontal scaling, retries, and tracing. It is not a general-purpose web host — it has no way to serve HTML/JS pages, handle routing, or do the CDN/edge caching a website needs. Keeping the two separate is also good architecture: the same agent API can back many clients (a website, a mobile app, a Slack bot, or even another agent), and the frontend and backend can be scaled, updated, and redeployed independently. Vercel does the opposite half well — it is optimized for serving Next.js frontends globally — so each platform hosts the layer it is built for, and the frontend talks to the agent through an API route.
 
 ### Question #2
 
@@ -436,7 +436,7 @@ Why should the LangSmith API key live in a Next.js API route (server-side) inste
 
 #### Answer
 
-_(insert your answer here)_
+Anything shipped to the browser is public: any visitor can open DevTools, inspect the JS bundle or network requests, and read the key. A leaked LangSmith API key would let anyone call my deployment directly — burning my OpenAI/Tavily credits, reading or creating threads (other users' conversation data), and accessing my LangSmith workspace. By routing all traffic through the Next.js API route (`app/api/[...path]/route.ts` with `langgraph-nextjs-api-passthrough`), the key stays in server-side environment variables and is injected into requests only on the server. The browser only ever talks to my own `/api/*` endpoint, which also gives me a single choke point where I can later add auth, rate limiting, or logging.
 
 ## Activity 1: Build a Helpfulness Loop in Production
 
