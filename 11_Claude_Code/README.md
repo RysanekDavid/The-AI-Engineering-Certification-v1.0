@@ -66,7 +66,9 @@ While scaffolding in Task 3 you used **plan mode** before letting Claude Code wr
 
 #### ✅ Answer
 
-_(insert your answer here)_
+An agent with shell access has arbitrary write access to your machine — a wrong tool call can install packages, rewrite files, or destroy work. The permission system inverts the default: nothing runs until you say yes. You stay the engineer of record.
+
+Plan mode matters most on an empty directory because there is no code to constrain the agent's imagination — it can propose any framework, any layout, any set of dependencies. The moment BEFORE the first file is written is the cheap moment to steer. After scaffolding, rework is expensive; before it, changes cost one paragraph of feedback. Today I asked Claude Code to scaffold the chat app in plan mode, reviewed the layout, confirmed the `agent.get_reply()` swap seam was isolated, then approved implementation. Fifteen seconds of reading the plan saved an hour of undoing the wrong shape.
 
 ### ❓ Question #2
 
@@ -74,7 +76,9 @@ _(insert your answer here)_
 
 #### ✅ Answer
 
-_(insert your answer here)_
+CLAUDE.md is loaded at the start of every session — every line costs context every single time. Belongs: things that are NOT discoverable by reading the code — the run command, the location of the swap seam (`agent.get_reply()`), conventions the code alone would not communicate (vanilla JS, isolated stub), non-obvious decisions. Does not belong: explanations of what FastAPI or uvicorn is, per-file prose, examples that duplicate what the code shows, stale in-progress notes.
+
+Session 3 taught that context is finite and every token has a cost. There we solved it with summarization middleware — compress conversation history to keep the useful signal, drop the redundant volume. CLAUDE.md is the same problem at start-of-session instead of mid-session: keep the highest-signal facts, drop everything derivable from the code itself. My CLAUDE.md is 37 lines because the summarization instinct from Session 3 kicked in — anything longer would tax every future session, forever.
 
 ### ❓ Question #3
 
@@ -82,7 +86,9 @@ The Agent SDK gives you the same agent loop that powers Claude Code. Compare thi
 
 #### ✅ Answer
 
-_(insert your answer here)_
+In LangGraph I built the loop myself: define state, wire model node → tool node → conditional edge back, decide when to stop, serialize messages, handle tool errors. The SDK collapses all of that into one call — `query()` runs the whole model → tool → observation cycle until the task is done. For free I got: the agent loop itself, a production tool suite (Read, Glob, Grep — file access I never had to implement), permission enforcement via `allowed_tools`, session persistence (`resume=session_id` replays the whole conversation — my Task 7 was a 10-line dict, not a checkpointer), cost tracking in `ResultMessage`, and `max_turns` as a built-in circuit breaker. Watching the message stream in `scratch_query.py` (SystemMessage init → AssistantMessage/tool cycles → ResultMessage) was literally watching my Session 2–4 graph, prebuilt.
+
+What I gave up: the graph topology. In LangGraph every node and edge is mine — I can route between specialized sub-agents, inject validation nodes between steps, or short-circuit on custom conditions. With the SDK the loop is a black box: I choose the tools, the model, and the prompt, but not what happens between turns. I also inherited its runtime quirks — the SDK spawns Claude Code as a subprocess, which collided with uvicorn's Windows SelectorEventLoop and cost me a worker-thread workaround. Trade-off in one line: LangGraph is a framework for building agents; the SDK is a finished agent you configure. For a codebase concierge, configuration was all I needed.
 
 ### ❓ Question #4
 
@@ -90,7 +96,9 @@ Your chat app could have called a chat completions API directly, the way you did
 
 #### ✅ Answer
 
-_(insert your answer here)_
+A chat completion can only talk about code from its training data or whatever I paste into the prompt. `query()` gives the model hands: it Reads, Globs and Greps the actual repository at answer time, so responses cite real files at their current state — my concierge answered dependency questions from the target repo's actual `package.json`, not from memory. It also grounds follow-ups ("what are *its* main dependencies?") in a persistent session instead of me re-sending history manually.
+
+The same hands are the new risk. A plain completion's worst case is a wrong answer; an agent's worst case is a wrong *action* — editing files, running shell commands, exfiltrating data — triggered not just by the user but by anything the agent reads (prompt injection living inside the repo it browses). And there's a cost risk: a loop that never converges burns tokens forever. My mitigations, in layers: `allowed_tools=["Read", "Glob", "Grep"]` makes the agent read-only — no Write, no Bash, so even a fully hijacked agent can observe but not act (this matters doubly because a server has no human at the permission gate; the allowlist IS the permission mode). `max_turns=25` caps runaway loops. My custom `count_lines` tool validates paths with `commonpath` against `TARGET_REPO_PATH`, because the model could be talked into requesting `..\..\Windows\win.ini` — I tested exactly that and got the refusal. Rule of thumb: capabilities are granted per-deployment, not per-conversation — the server decides what the agent may ever do; the user only decides what it's asked to do.
 
 ## Activity 1: Level Up the Chat App
 
