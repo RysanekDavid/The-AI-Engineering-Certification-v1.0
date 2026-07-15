@@ -65,7 +65,9 @@ In `01_Cat_Health_Agent_Guardrails.ipynb`, input rails run in a specific order: 
 
 #### ✅ Answer
 
-_(insert your answer here)_
+The ordering is a cost funnel. Deterministic rails (regex on emergency terms, injection phrases, PII) cost microseconds and zero tokens; the model-based topical guard costs one full model call per request — hundreds of milliseconds and real money. If the topical guard ran first, every request would pay that cost, including the ones a regex could have rejected for free. Running the deterministic rails first means blocked, escalated, or PII-carrying inputs never reach the paid check. The topical guard is only asked to judge inputs the cheap rails could not decide. Same funnel logic that makes caching cheap: cheapest, most certain check first.
+
+Decisions instead of pass/fail carry the routing information the middleware needs. A boolean says "not OK" and leaves the caller to guess what to do. `block` returns a canned refusal, `escalate` short-circuits with an urgent redirect ("call your vet now" for cat health — the emergency rail is arguably the most important rail because it refuses to be a chatbot about a life-threatening situation), and `rewrite` returns a modified message and lets the loop continue (used by the PII rail — the user did nothing wrong, we just do not want their contact details in model context or logs). Each decision maps to a specific middleware action: `block`/`escalate` jump to `end` and cost zero model tokens; `rewrite` replaces the human message by `id` and the loop continues. A boolean cannot carry that routing, and the audit log of *which* decision fired (and why) is what makes the rail debuggable in production.
 
 ### ❓ Question #2
 
@@ -73,7 +75,9 @@ In `02_Cat_Health_Agent_Caching.ipynb`, a semantic cache can serve a paraphrased
 
 #### ✅ Answer
 
-_(insert your answer here)_
+A similarity threshold treats cosine distance as if it correlated with semantic risk, but embeddings measure how alike two sentences *look*, not how much the difference between them matters. "Is chicken a good treat for cats?" and "Is chocolate a good treat for cats?" are one token apart in surface text and land almost on top of each other in embedding space — but one is a dinner question and the other is a poisoning emergency. Any threshold loose enough to catch legitimate paraphrases will let the poisoning question through; any threshold strict enough to reject the poisoning question will reject the safe paraphrases too. There is no value that separates them because the embedding model was not trained to encode "how bad is it if you are wrong here". Worse: the cached wrong answer is served *faster and with more confidence* than the live model would have produced.
+
+The production fix is to stop asking the cache to make the safety decision. High-stakes queries must bypass the semantic cache entirely, and the decision about which queries those are belongs upstream in the deterministic emergency rail from Notebook 1: if `run_input_rails` returns `escalate`, never consult and never populate the semantic cache. Guardrails and caches are not separate features — the rails decide what is *safe to cache*. On top of that bypass, a production semantic cache still needs TTL expiry (so stale medical guidance ages out), a bounded size with eviction, and per-user scoping so one user's cached answer never leaks to another. The cheap answer stays cheap for repeated safe questions; anything the emergency rail flags always pays for a live model call.
 
 ## Submitting Your Homework
 
