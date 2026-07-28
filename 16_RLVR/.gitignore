@@ -3,4 +3,5 @@ artifacts/
 
 # Environment
 .venv/
+.uv-cache/
 __pycache__/
